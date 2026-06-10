@@ -8,6 +8,17 @@ import { usersService } from '../../services/users.service';
 import { Raffle, Ticket, Draw } from '../../types';
 import ProbabilityBar from '../../components/shared/ProbabilityBar';
 import { Coins, Trophy, AlertCircle } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid, Cell,
+} from 'recharts';
+
+interface ParticipantStat {
+  name: string;
+  tickets: number;
+  probability: number;
+  isCurrentUser: boolean;
+}
 
 export default function RaffleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +28,7 @@ export default function RaffleDetailPage() {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [draw, setDraw] = useState<Draw | null>(null);
+  const [participantStats, setParticipantStats] = useState<ParticipantStat[]>([]);
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
@@ -33,6 +45,31 @@ export default function RaffleDetailPage() {
       ]);
       setRaffle(raffleData);
       setTickets(ticketsData);
+
+      // Monta estatísticas por participante agrupando os tickets
+      const totalTickets = ticketsData.length;
+      const participantMap: Record<string, { name: string; tickets: number; isCurrentUser: boolean }> = {};
+
+      ticketsData.forEach((ticket) => {
+        const uid = ticket.userId;
+        const name = ticket.user?.name ?? 'Usuário';
+        if (!participantMap[uid]) {
+          participantMap[uid] = { name, tickets: 0, isCurrentUser: uid === user?.id };
+        }
+        participantMap[uid].tickets += 1;
+      });
+
+      const stats: ParticipantStat[] = Object.values(participantMap).map((p) => ({
+        ...p,
+        // P(vitória) = tickets do participante / total de tickets vendidos
+        probability: totalTickets > 0
+          ? parseFloat(((p.tickets / totalTickets) * 100).toFixed(2))
+          : 0,
+      }));
+
+      // Ordena do maior para o menor
+      stats.sort((a, b) => b.probability - a.probability);
+      setParticipantStats(stats);
 
       if (raffleData.status === 'DRAWN') {
         const drawData = await drawsService.getByRaffle(id).catch(() => null);
@@ -86,16 +123,26 @@ export default function RaffleDetailPage() {
 
   const soldNumbers = new Set(tickets.map((t) => t.selectedNumber));
   const userNumbers = new Set(tickets.filter((t) => t.userId === user?.id).map((t) => t.selectedNumber));
-
-  // Verifica criador pelos dois campos para garantir
   const isCreator = raffle.creatorId === user?.id || raffle.creator?.id === user?.id;
   const isOpen = raffle.status === 'OPEN';
 
   const drawDateFormatted = new Date(raffle.drawDate).toLocaleDateString('pt-BR');
   const drawTimeFormatted = new Date(raffle.drawDate).toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
+    hour: '2-digit', minute: '2-digit',
   });
+
+  // Tooltip customizado do gráfico
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload as ParticipantStat;
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm text-sm">
+        <p className="font-medium text-gray-800">{d.name}{d.isCurrentUser ? ' (você)' : ''}</p>
+        <p className="text-gray-500">{d.tickets} ticket{d.tickets > 1 ? 's' : ''}</p>
+        <p className="text-primary font-bold">{d.probability}% de chance</p>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -114,7 +161,6 @@ export default function RaffleDetailPage() {
             }`}>
               {raffle.status === 'OPEN' ? 'Aberta' : raffle.status === 'DRAWN' ? 'Sorteada' : 'Cancelada'}
             </span>
-            {/* Botão de editar — só aparece para o criador em rifas abertas */}
             {isCreator && isOpen && (
               <Link
                 to={`/raffles/${raffle.id}/edit`}
@@ -126,7 +172,6 @@ export default function RaffleDetailPage() {
           </div>
         </div>
 
-        {/* 4 cards de info incluindo data/hora do sorteio */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="text-center bg-blue-50 rounded-lg p-3">
             <p className="text-xs text-blue-600">Custo</p>
@@ -163,7 +208,7 @@ export default function RaffleDetailPage() {
         </div>
       )}
 
-      {/* Probabilidade do usuário */}
+      {/* Probabilidade do usuário atual */}
       {raffle.userTickets > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
           <h3 className="font-semibold text-gray-800">Sua probabilidade</h3>
@@ -182,6 +227,89 @@ export default function RaffleDetailPage() {
         </div>
       )}
 
+      {/* Gráfico de probabilidades por participante */}
+      {participantStats.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-800 mb-1">Probabilidade por participante</h3>
+          <p className="text-xs text-gray-400 mb-4">
+            P(vitória) = tickets do participante ÷ total de tickets vendidos
+          </p>
+
+          <ResponsiveContainer width="100%" height={Math.max(180, participantStats.length * 44)}>
+            <BarChart
+              data={participantStats}
+              layout="vertical"
+              margin={{ top: 0, right: 48, left: 8, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+              <XAxis
+                type="number"
+                domain={[0, 100]}
+                tickFormatter={(v) => `${v}%`}
+                tick={{ fontSize: 11 }}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fontSize: 12 }}
+                width={90}
+                tickFormatter={(name) => name.length > 12 ? name.slice(0, 12) + '…' : name}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="probability" radius={[0, 4, 4, 0]} maxBarSize={28}>
+                {participantStats.map((entry, index) => (
+                  <Cell
+                    key={index}
+                    fill={entry.isCurrentUser ? '#2563EB' : '#14B8A6'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+
+          {/* Legenda */}
+          <div className="flex gap-4 mt-3 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-primary inline-block" /> Você
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-secondary inline-block" /> Outros participantes
+            </span>
+          </div>
+
+          {/* Tabela de participantes */}
+          <div className="mt-4 border border-gray-100 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Participante</th>
+                  <th className="text-center px-4 py-2 text-xs font-medium text-gray-500">Tickets</th>
+                  <th className="text-center px-4 py-2 text-xs font-medium text-gray-500">P(vitória)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {participantStats.map((p, i) => (
+                  <tr key={i} className={p.isCurrentUser ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+                    <td className="px-4 py-2.5 font-medium text-gray-800">
+                      {p.name}
+                      {p.isCurrentUser && (
+                        <span className="ml-2 text-xs text-primary font-normal">você</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-center text-gray-600">{p.tickets}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      <span className={`font-bold ${p.isCurrentUser ? 'text-primary' : 'text-secondary'}`}>
+                        {p.probability}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Grade de números */}
       {isOpen && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -191,7 +319,6 @@ export default function RaffleDetailPage() {
               const isSold = soldNumbers.has(num);
               const isUserNum = userNumbers.has(num);
               const isSelected = selectedNumber === num;
-
               return (
                 <button
                   key={num}
@@ -239,7 +366,7 @@ export default function RaffleDetailPage() {
         </div>
       )}
 
-      {/* Botão de sorteio — só aparece para o criador em rifas abertas */}
+      {/* Botão de sorteio — só para o criador */}
       {isCreator && isOpen && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
           <div className="flex items-start gap-3">
