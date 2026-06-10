@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Ticket, PlusCircle, BarChart2,
   Trophy, FlaskConical, User, LogOut, Menu, X, Coins,
 } from 'lucide-react';
+import Logo from './Logo';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,16 +32,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 fixed h-full z-10">
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-xl font-bold text-primary">🎰 ProbBet</h1>
-          <p className="text-xs text-gray-500 mt-1">Probabilidade & Estatística</p>
+        <div className="p-5 border-b border-gray-100">
+          <Logo size="md" />
         </div>
 
         {user && (
           <div className="px-4 py-3 bg-blue-50 mx-3 mt-3 rounded-lg">
             <p className="text-xs text-gray-500">Seus pontos</p>
             <div className="flex items-center gap-1 mt-0.5">
-              <Coins size={16} className="text-accent" />
+              <Coins size={16} className="text-amber-500" />
               <span className="font-bold text-lg text-gray-800">{user.points}</span>
             </div>
           </div>
@@ -77,10 +77,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-20 px-4 py-3 flex justify-between items-center">
-        <h1 className="font-bold text-primary">🎰 ProbBet</h1>
+        <Logo size="sm" />
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium flex items-center gap-1">
-            <Coins size={14} className="text-accent" />{user?.points}
+            <Coins size={14} className="text-amber-500" />{user?.points}
           </span>
           <button onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={22} /> : <Menu size={22} />}

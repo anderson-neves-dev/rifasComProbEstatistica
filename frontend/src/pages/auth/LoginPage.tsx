@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { authService } from '../../services/auth.service';
 import { useAuth } from '../../store/AuthContext';
+import Logo from '../../components/shared/Logo';
 
 const loginSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -39,10 +40,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary">🎰 ProbBet</h1>
-          <p className="text-gray-500 mt-2">Probabilidade & Estatística com rifas virtuais</p>
+        <div className="flex justify-center mb-6">
+          <Logo size="lg" showText={true} />
         </div>
+        <p className="text-center text-gray-500 text-sm mb-8">
+          Aprenda probabilidade e estatística jogando
+        </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>

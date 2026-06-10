@@ -11,7 +11,7 @@ async function bootstrap() {
   app.enableCors({ origin: '*' });
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('ProbBet API')
+    .setTitle('Rifas com Estatística — API')
     .setDescription('Plataforma acadêmica de rifas virtuais para estudo de Probabilidade e Estatística')
     .setVersion('1.0')
     .addBearerAuth()
@@ -21,7 +21,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`ProbBet backend rodando em: http://localhost:${process.env.PORT ?? 3000}`);
+  console.log(`Rifas com Estatística backend rodando em: http://localhost:${process.env.PORT ?? 3000}`);
   console.log(`Swagger disponível em: http://localhost:${process.env.PORT ?? 3000}/api`);
 }
 
