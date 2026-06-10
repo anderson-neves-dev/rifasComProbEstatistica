@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import {
   LayoutDashboard, Ticket, PlusCircle, BarChart2,
-  Trophy, FlaskConical, User, LogOut, Menu, X, Coins,
+  Trophy, FlaskConical, User, LogOut, Menu, X, Coins, Info,
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -15,6 +15,7 @@ const navItems = [
   { to: '/ranking', label: 'Ranking', icon: Trophy },
   { to: '/simulator', label: 'Simulador', icon: FlaskConical },
   { to: '/profile', label: 'Perfil', icon: User },
+  { to: '/about', label: 'Sobre', icon: Info },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -46,7 +47,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
@@ -89,7 +90,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 bg-white z-10 pt-16 p-4">
+        <div className="md:hidden fixed inset-0 bg-white z-10 pt-16 p-4 overflow-y-auto">
           <nav className="space-y-1">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link

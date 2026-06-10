@@ -12,6 +12,7 @@ import StatsPage from './pages/stats/StatsPage';
 import RankingPage from './pages/ranking/RankingPage';
 import SimulatorPage from './pages/simulator/SimulatorPage';
 import ProfilePage from './pages/profile/ProfilePage';
+import AboutPage from './pages/about/AboutPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route path="/ranking" element={<PrivateRoute><RankingPage /></PrivateRoute>} />
       <Route path="/simulator" element={<PrivateRoute><SimulatorPage /></PrivateRoute>} />
       <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+      <Route path="/about" element={<PrivateRoute><AboutPage /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
